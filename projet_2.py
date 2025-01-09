@@ -3,33 +3,24 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import os
+import shutil
 from urllib.parse import urljoin
 
-print("Phase 1")
+print("Phase 3")
 
-file = "phase_1.csv"
+csv_folder = "CSV files"
 
-# Suppression du fichier phase_1.csv s'il existe afin de le regénérer
-if os.path.exists(file):
-    os.remove(file)
-    print(f"The file '{file}' has been deleted.")
+# Suppression du dossier "CSV files" s'il existe afin de le regénérer
+if os.path.exists(csv_folder):
+    shutil.rmtree(csv_folder)
+    print(f"The folder '{csv_folder}' has been deleted.")
 else:
-    print(f"The file '{file}' does not exist.")
+    print(f"The folder '{csv_folder}' does not exist.")
 
-# Création du fichier .csv avec chaque en-tête
-with open(file, mode="a", newline="", encoding="utf-8") as file:
-    writer = csv.writer(file, delimiter=";")
-    writer.writerow([
-        "product_page_url",
-        "universal_product_code",
-        "title",
-        "price_including_tax",
-        "price_excluding_tax",
-        "number_available",
-        "product_description",
-        "category",
-        "review_rating",
-        "image_url"])
+# Création du dossier contenant tous les CSV
+os.makedirs(csv_folder)
+
+
 
 
 # Extrait tous les livres d'une catégorie
@@ -42,17 +33,35 @@ def get_categories(page):
 
     # Récupération de l'url de chaque catégorie
     categories_tag = home_soup.find("ul", class_="nav-list").find("ul").find_all("a")
-    categories_href = [urljoin(page,a["href"]) for a in categories_tag]
-
+    
     # Extraire chaque livre de chaque catégorie
-    for category_url in categories_href :
+    for category_tag in categories_tag :
 
-        extract_all_books(category_url)
+        category_href = urljoin(page,category_tag["href"])
+
+        # Création d'un fichier .csv avec le nom de la catégorie
+        with open(csv_folder + "\\" + category_tag.get_text(strip=True) + ".csv", mode="a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file, delimiter=";")
+            
+            # Ajout de chaque en-tête
+            writer.writerow([
+                "product_page_url",
+                "universal_product_code",
+                "title",
+                "price_including_tax",
+                "price_excluding_tax",
+                "number_available",
+                "product_description",
+                "category",
+                "review_rating",
+                "image_url"])
+
+            extract_all_books(category_href, writer)
 
 
 
 # Extrait tous les livres d'une catégorie
-def extract_all_books(category_url):
+def extract_all_books(category_url, writer):
 
     # Récupération du contenu HTML de la catégorie
     category_page = requests.get(category_url)
@@ -66,20 +75,15 @@ def extract_all_books(category_url):
 
     try:
         next_button = category_soup.find("li", class_="next").find("a")
-        extract_all_books(urljoin(category_url, next_button["href"]))
+        extract_all_books(urljoin(category_url, next_button["href"]), writer)
     except :
         print("pas de bouton next")
 
-    # Ouverture du CSV
-    file = "phase_1.csv"
-    with open(file, mode="a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file, delimiter=";")
+    # Extraire chaque livre de chaque catégorie
+    for book in articles :
 
-        # Extraire chaque livre de chaque catégorie
-        for book in articles :
-
-            # Ajouter le livre dans le CSV via son url complet
-            append_book_to_csv(urljoin(category_url, book.find("h3").a["href"]), writer)
+        # Ajouter le livre dans le CSV via son url complet
+        append_book_to_csv(urljoin(category_url, book.find("h3").a["href"]), writer)
 
             
 
