@@ -7,10 +7,6 @@ from urllib.parse import urljoin
 
 print("Phase 1")
 
-# f = open("article.txt", "w", encoding="utf-8")
-# f.write(str(articles[1]))
-# f.close()
-
 file = "phase_1.csv"
 
 # Suppression du fichier phase_1.csv s'il existe afin de le regénérer
@@ -46,7 +42,7 @@ def get_categories(page):
 
     # Récupération de l'url de chaque catégorie
     categories_tag = home_soup.find("ul", class_="nav-list").find("ul").find_all("a")
-    categories_href = [urljoin("https://books.toscrape.com/index.html",a["href"]) for a in categories_tag]
+    categories_href = [urljoin(page,a["href"]) for a in categories_tag]
 
     # Extraire chaque livre de chaque catégorie
     for category_url in categories_href :
@@ -63,8 +59,16 @@ def extract_all_books(category_url):
     category_page.encoding = 'utf-8'
     category_soup = BeautifulSoup(category_page.content, 'html.parser')
 
-    # Récupération de chaque livre
+    # Récupération de chaque livre de la première page de la catégorie
     articles = category_soup.find_all("article", class_="product_pod")
+
+    print(category_soup.find("h1").text + " " + str(len(articles)))
+
+    try:
+        next_button = category_soup.find("li", class_="next").find("a")
+        extract_all_books(urljoin(category_url, next_button["href"]))
+    except :
+        print("pas de bouton next")
 
     # Ouverture du CSV
     file = "phase_1.csv"
@@ -78,7 +82,7 @@ def extract_all_books(category_url):
             append_book_to_csv(urljoin(category_url, book.find("h3").a["href"]), writer)
 
             
-            
+
 # Ecrit toutes les données de chaque livre dans un fichier CSV
 def append_book_to_csv(book_url, writer):
 
@@ -91,7 +95,7 @@ def append_book_to_csv(book_url, writer):
 
     universal_product_code = book_soup.find("table", class_="table-striped").find_all("td")[0].text
     title = book_soup.find("h1").text
-    print(title)
+    # print(title)
     price_including_tax = book_soup.find("table", class_="table-striped").find_all("td")[3].text
     price_excluding_tax = book_soup.find("table", class_="table-striped").find_all("td")[2].text
     number_available = book_soup.find("table", class_="table-striped").find_all("td")[5].text
