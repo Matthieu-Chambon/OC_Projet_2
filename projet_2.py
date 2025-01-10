@@ -4,13 +4,15 @@ from bs4 import BeautifulSoup
 import csv
 import os
 import shutil
+import re
 from urllib.parse import urljoin
 
-print("Phase 3")
 
-csv_folder = "CSV files"
+print("Phase 4")
 
 # Suppression du dossier "CSV files" s'il existe afin de le regénérer
+csv_folder = "CSV files"
+
 if os.path.exists(csv_folder):
     shutil.rmtree(csv_folder)
     print(f"The folder '{csv_folder}' has been deleted.")
@@ -20,8 +22,17 @@ else:
 # Création du dossier contenant tous les CSV
 os.makedirs(csv_folder)
 
+# Suppression du dossier "Book images" s'il existe afin de le regénérer
+img_folder = "Book images"
 
+if os.path.exists(img_folder):
+    shutil.rmtree(img_folder)
+    print(f"The folder '{img_folder}' has been deleted.")
+else:
+    print(f"The folder '{img_folder}' does not exist.")
 
+# Création du dossier contenant tous les CSV
+os.makedirs(img_folder)
 
 # Extrait tous les livres d'une catégorie
 def get_categories(page):
@@ -56,6 +67,8 @@ def get_categories(page):
                 "review_rating",
                 "image_url"])
 
+            os.makedirs(f"{img_folder}\\{category_tag.get_text(strip=True)}")
+
             extract_all_books(category_href, writer)
 
 
@@ -88,11 +101,9 @@ def extract_all_books(category_url, writer):
             
 
 # Ecrit toutes les données de chaque livre dans un fichier CSV
-def append_book_to_csv(book_url, writer):
+def append_book_to_csv(product_page_url, writer):
 
     # Récupération de différentes données
-    product_page_url = book_url
-
     book_page = requests.get(product_page_url)
     book_page.encoding = 'utf-8'
     book_soup = BeautifulSoup(book_page.content, 'html.parser')
@@ -126,6 +137,22 @@ def append_book_to_csv(book_url, writer):
         category,
         review_rating,
         image_url])
+    
+
+    # Récupération de l'image du livre
+    img_url = urljoin(product_page_url,book_soup.find("div", class_=["item", "active"]).find("img")["src"])
+    img = requests.get(img_url)
+
+    # Transformer le titre pour qu'il soit valide en nom de fichier Windows.
+    invalid_chars = "[<>:\"/\\|?*]"
+    windows_translation = str.maketrans("", "", invalid_chars)
+    image_name = title.translate(windows_translation)
+
+    # Enregistrement de l'image du livre
+    with open(f"{img_folder}\\{category}\\{image_name}.jpg", "wb") as image_file :
+        image_file.write(img.content)
+
 
 page = "https://books.toscrape.com/index.html"
 get_categories(page)
+
