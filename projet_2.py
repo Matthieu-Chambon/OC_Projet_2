@@ -4,11 +4,10 @@ from bs4 import BeautifulSoup
 import csv
 import os
 import shutil
-import re
 from urllib.parse import urljoin
 
 
-print("Phase 4")
+print("Début de l'exportation des données ...")
 
 # Suppression du dossier "CSV files" s'il existe afin de le regénérer
 csv_folder = "CSV files"
@@ -46,7 +45,7 @@ def get_categories(page):
     categories_tag = home_soup.find("ul", class_="nav-list").find("ul").find_all("a")
     
     # Extraire chaque livre de chaque catégorie
-    for category_tag in categories_tag :
+    for index, category_tag in enumerate(categories_tag):
 
         category_href = urljoin(page,category_tag["href"])
 
@@ -71,6 +70,9 @@ def get_categories(page):
 
             extract_all_books(category_href, writer)
 
+            # Afficher l'état d'avancement du programme
+            print("Catégorie " + category_tag.get_text(strip=True) + " exportée ~" + str(((index+1)*100)/len(categories_tag)) + "%")
+
 
 
 # Extrait tous les livres d'une catégorie
@@ -84,21 +86,16 @@ def extract_all_books(category_url, writer):
     # Récupération de chaque livre de la première page de la catégorie
     articles = category_soup.find_all("article", class_="product_pod")
 
-    print(category_soup.find("h1").text + " " + str(len(articles)))
-
-    try:
-        next_button = category_soup.find("li", class_="next").find("a")
-        extract_all_books(urljoin(category_url, next_button["href"]), writer)
-    except :
-        print("pas de bouton next")
-
     # Extraire chaque livre de chaque catégorie
     for book in articles :
 
         # Ajouter le livre dans le CSV via son url complet
         append_book_to_csv(urljoin(category_url, book.find("h3").a["href"]), writer)
 
-            
+    # Si un bouton "Next" existe, on extrait aussi les livres de la page suivante
+    next_button = category_soup.find("li", class_="next")
+    if next_button :
+        extract_all_books(urljoin(category_url, next_button.find("a")["href"]), writer)       
 
 # Ecrit toutes les données de chaque livre dans un fichier CSV
 def append_book_to_csv(product_page_url, writer):
@@ -156,3 +153,4 @@ def append_book_to_csv(product_page_url, writer):
 page = "https://books.toscrape.com/index.html"
 get_categories(page)
 
+print("Fin de l'exécution du programme !")
