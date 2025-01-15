@@ -13,9 +13,6 @@ csv_folder = "CSV files"
 
 if os.path.exists(csv_folder):
     shutil.rmtree(csv_folder)
-    print(f"The folder '{csv_folder}' has been deleted.")
-else:
-    print(f"The folder '{csv_folder}' does not exist.")
 
 # Création du dossier contenant tous les CSV
 os.makedirs(csv_folder)
@@ -25,12 +22,11 @@ img_folder = "Book images"
 
 if os.path.exists(img_folder):
     shutil.rmtree(img_folder)
-    print(f"The folder '{img_folder}' has been deleted.")
-else:
-    print(f"The folder '{img_folder}' does not exist.")
 
-# Création du dossier contenant tous les CSV
+# Création du dossier contenant toutes les images
 os.makedirs(img_folder)
+
+
 
 # Parcourt chaque catégorie du site
 def get_categories(page):
@@ -65,6 +61,7 @@ def get_categories(page):
                 "review_rating",
                 "image_url"])
 
+            # Création du dossier image de la catégori
             os.makedirs(f"{img_folder}\\{category_tag.get_text(strip=True)}")
 
             extract_all_books(category_href, writer)
@@ -119,7 +116,7 @@ def append_book_to_csv(product_page_url, writer):
 
     category = book_soup.find("ul", class_="breadcrumb").find_all("a")[2].text
     review_rating = book_soup.find("p", class_="star-rating")["class"][1]
-    image_url = urljoin(product_page_url, book_soup.find("div", class_=['item', 'active']).find("img").src)
+    image_url = urljoin(product_page_url, book_soup.find("div", class_=['item', 'active']).find("img")["src"])
 
     # Ecriture de ces données dans le fichier .csv
     writer.writerow([
@@ -135,17 +132,12 @@ def append_book_to_csv(product_page_url, writer):
         image_url])
     
     # Récupération de l'image du livre
-    img_url = urljoin(product_page_url,book_soup.find("div", class_=["item", "active"]).find("img")["src"])
-    img = requests.get(img_url)
-
-    # Transformer le titre pour qu'il soit valide en nom de fichier
-    invalid_chars = "[<>:\"/\\|?*]"
-    windows_translation = str.maketrans("", "", invalid_chars)
-    image_name = title.translate(windows_translation)
+    img = requests.get(image_url)
 
     # Enregistrement de l'image du livre
-    with open(f"{img_folder}\\{category}\\{image_name}.jpg", "wb") as image_file :
+    with open(f"{img_folder}\\{category}\\{os.path.basename(image_url)}", "wb") as image_file :
         image_file.write(img.content)
+
 
 
 page = "https://books.toscrape.com/index.html"
