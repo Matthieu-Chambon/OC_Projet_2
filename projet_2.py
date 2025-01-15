@@ -1,4 +1,3 @@
-# Imports nécessaires au fonctionnement du programme
 import requests
 from bs4 import BeautifulSoup
 import csv
@@ -33,7 +32,7 @@ else:
 # Création du dossier contenant tous les CSV
 os.makedirs(img_folder)
 
-# Extrait tous les livres d'une catégorie
+# Parcourt chaque catégorie du site
 def get_categories(page):
 
     # Récupération de la page d'accueil du site "Books to Scrape"
@@ -112,7 +111,7 @@ def append_book_to_csv(product_page_url, writer):
     price_excluding_tax = book_soup.find("table", class_="table-striped").find_all("td")[2].text
     number_available = book_soup.find("table", class_="table-striped").find_all("td")[5].text
 
-    # Certains livres n'ont pas de descrition (ex : https://books.toscrape.com/catalogue/alice-in-wonderland-alices-adventures-in-wonderland-1_5/index.html)
+    # Certains livres n'ont pas de descrition
     try:
         product_description = book_soup.find("div", id="product_description").find_next_sibling().text
     except :
@@ -135,12 +134,11 @@ def append_book_to_csv(product_page_url, writer):
         review_rating,
         image_url])
     
-
     # Récupération de l'image du livre
     img_url = urljoin(product_page_url,book_soup.find("div", class_=["item", "active"]).find("img")["src"])
     img = requests.get(img_url)
 
-    # Transformer le titre pour qu'il soit valide en nom de fichier Windows.
+    # Transformer le titre pour qu'il soit valide en nom de fichier
     invalid_chars = "[<>:\"/\\|?*]"
     windows_translation = str.maketrans("", "", invalid_chars)
     image_name = title.translate(windows_translation)
