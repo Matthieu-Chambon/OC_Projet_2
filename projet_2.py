@@ -61,7 +61,7 @@ def get_categories(page):
                 "review_rating",
                 "image_url"])
 
-            # Création du dossier image de la catégori
+            # Création du dossier image de la catégorie
             os.makedirs(f"{img_folder}\\{category_tag.get_text(strip=True)}")
 
             extract_all_books(category_href, writer)
@@ -103,10 +103,12 @@ def append_book_to_csv(product_page_url, writer):
 
     universal_product_code = book_soup.find("table", class_="table-striped").find_all("td")[0].text
     title = book_soup.find("h1").text
-    # print(title)
     price_including_tax = book_soup.find("table", class_="table-striped").find_all("td")[3].text
     price_excluding_tax = book_soup.find("table", class_="table-striped").find_all("td")[2].text
+    
     number_available = book_soup.find("table", class_="table-striped").find_all("td")[5].text
+    # Récupérer uniquement le nombre de livres disponibles
+    number_available = int(''.join(filter(str.isdigit, number_available)))
 
     # Certains livres n'ont pas de descrition
     try:
